@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "632161844746",
+    "project_id": "testing-lecture",
+    "storage_bucket": "testing-lecture.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:632161844746:android:9846af122133febc5269f3",
+        "android_client_info": {
+          "package_name": "com.example.newfirebasetest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBC2Emobx3KGslRkUJUE5o4m0RrALuIST8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
