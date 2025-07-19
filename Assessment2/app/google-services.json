@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "211697175063",
+    "project_id": "assignment-2-3d3a2",
+    "storage_bucket": "assignment-2-3d3a2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:211697175063:android:8b4ff0a3d5e67165a0ea52",
+        "android_client_info": {
+          "package_name": "com.example.softwaredevelopmentassessment2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "211697175063-dm9n4tlvkeamsq2ast503jhg1tfabflf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwXH2sqLrr6GYtfUg04wHl3SIJcX-CcS4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "211697175063-dm9n4tlvkeamsq2ast503jhg1tfabflf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
