@@ -31,6 +31,7 @@ import com.facebook.login.widget.LoginButton;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.BuildConfig;
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
+import com.firebase.ui.auth.FirebaseUiException;
 import com.firebase.ui.auth.IdpResponse;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
 import com.google.android.gms.common.ConnectionResult;
@@ -57,6 +58,8 @@ import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.auth.PhoneMultiFactorAssertion;
 import com.google.firebase.auth.PhoneMultiFactorGenerator;
 import com.google.firebase.auth.PhoneMultiFactorInfo;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Arrays;
@@ -65,13 +68,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
+import com.firebase.ui.auth.ErrorCodes;
+import com.google.firebase.auth.FirebaseAuthMultiFactorException;
 
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d("AuthFlow", "onCreate: Activity started");
         FirebaseApp.initializeApp(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
@@ -83,50 +88,38 @@ public class MainActivity extends AppCompatActivity {
         });
 
         Button GotoAuthButton = findViewById(R.id.GotoAuthButton);
-        GotoAuthButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, VerificationActivity.class);
-                startActivity(intent);
-            }
+        GotoAuthButton.setOnClickListener(v -> {
+            Log.d("AuthFlow", "GotoAuthButton clicked → launching VerificationActivity");
+            Intent intent = new Intent(MainActivity.this, VerificationActivity.class);
+            startActivity(intent);
         });
 
         Button SignOutButton = findViewById(R.id.SignOutButton);
-        SignOutButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AuthUI.getInstance()
-                        .signOut(MainActivity.this)
-                        .addOnCompleteListener(new OnCompleteListener<Void>() {
-                            public void onComplete(@NonNull Task<Void> task) {
-                                // ...
-                            }
-                        });
-            }
+        SignOutButton.setOnClickListener(v -> {
+            Log.d("AuthFlow", "SignOutButton clicked → signing out");
+            AuthUI.getInstance().signOut(MainActivity.this)
+                    .addOnCompleteListener(task -> Log.d("AuthFlow", "Sign out complete"));
         });
 
         // 🔐 App Check setup
-        Log.d("BuildCheck", "Is Debuggable: " + ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0));
-        Log.d("BuildCheck", "BuildConfig.DEBUG: " + BuildConfig.DEBUG);
+        Log.d("AuthFlow", "Setting up AppCheck");
         FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
-        //if (BuildConfig.DEBUG) {
-        if (true) {
+        if (true) { // Debug mode for now
             firebaseAppCheck.installAppCheckProviderFactory(DebugAppCheckProviderFactory.getInstance());
+            Log.d("AuthFlow", "AppCheck: Debug provider installed");
         } else {
             firebaseAppCheck.installAppCheckProviderFactory(PlayIntegrityAppCheckProviderFactory.getInstance());
+            Log.d("AuthFlow", "AppCheck: PlayIntegrity provider installed");
         }
 
+        // Test Firestore write
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-// Create a collection "debugTest" and a document "ping"
         Map<String, Object> data = new HashMap<>();
         data.put("timestamp", System.currentTimeMillis());
-
         db.collection("debugTest").document("ping")
                 .set(data)
-                .addOnSuccessListener(aVoid -> Log.d("Firestore", "Document written"))
-                .addOnFailureListener(e -> Log.e("Firestore", "Error writing document", e));
-
+                .addOnSuccessListener(aVoid -> Log.d("Firestore", "Test doc written"))
+                .addOnFailureListener(e -> Log.e("Firestore", "Error writing test doc", e));
 
         FirebaseAppCheck.getInstance().getToken(false)
                 .addOnCompleteListener(task -> {
@@ -137,13 +130,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-
-        // 🔗 Facebook SDK setup
+        // Facebook SDK setup
+        Log.d("AuthFlow", "Initializing Facebook SDK");
         FacebookSdk.sdkInitialize(getApplicationContext());
         AppEventsLogger.activateApp(this.getApplication());
         CallbackManager callbackManager = CallbackManager.Factory.create();
 
-        // 🔑 FirebaseUI sign-in
+        // FirebaseUI sign-in setup
+        Log.d("AuthFlow", "Building sign-in intent");
         List<AuthUI.IdpConfig> providers = Arrays.asList(
                 new AuthUI.IdpConfig.EmailBuilder().build(),
                 new AuthUI.IdpConfig.PhoneBuilder().build(),
@@ -155,56 +149,60 @@ public class MainActivity extends AppCompatActivity {
         Intent signInIntent = AuthUI.getInstance()
                 .createSignInIntentBuilder()
                 .setAvailableProviders(providers)
+                .setLogo(R.drawable.ic_launcher_foreground) // Optional: helps verify which screen is loading
                 .build();
+
+        Log.d("AuthFlow", "Launching sign-in intent");
         signInLauncher.launch(signInIntent);
     }
 
-//    GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
-//    int status = apiAvailability.isGooglePlayServicesAvailable(Authentication);
-//    if (status != ConnectionResult.SUCCESS) {
-//        // Prompt to install/update Play Services
-//    }
-
     private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
             new FirebaseAuthUIActivityResultContract(),
-            new ActivityResultCallback<FirebaseAuthUIAuthenticationResult>() {
-                @Override
-                public void onActivityResult(FirebaseAuthUIAuthenticationResult result) {
-                    onSignInResult(result);
-                }
-            }
+            this::onSignInResult
     );
 
-    // 🔁 Handles result from FirebaseUI sign-in
+    // Handles result from FirebaseUI sign-in
     private void onSignInResult(FirebaseAuthUIAuthenticationResult result) {
-        Log.d("Signin Result", "Result Returned.");
+        Log.d("SignInFlow", "onSignInResult called");
         IdpResponse response = result.getIdpResponse();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-        if (result.getResultCode() == RESULT_OK || user != null) {
-            Log.d("UserLog", "User is logged in");
-            proceedWithUser(user);
-        } else {
-            Log.d("LoginError", "Initial result not OK or user null — checking again shortly...");
-
-            // 🔁 Retry after short delay in case FirebaseUser is populated late
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                FirebaseUser delayedUser = FirebaseAuth.getInstance().getCurrentUser();
-                if (delayedUser != null) {
-                    Log.d("UserLog", "User became available after delay");
-                    proceedWithUser(delayedUser);
-                } else {
-                    Log.d("LoginError", "User still null after delay");
-                    Exception e = response != null ? response.getError() : null;
-                    if (e instanceof FirebaseAuthMultiFactorException) {
-                        handleMfaChallenge((FirebaseAuthMultiFactorException) e);
-                    } else {
-                        // Handle other sign-in errors
-                    }
-                }
-            }, 500); // Delay for half a second
+        if (result.getResultCode() == RESULT_OK && user != null) {
+            Log.d("SignInFlow", "Sign-in successful. User: " + user.getUid());
+            FirestoreDatabase.ensureUserAccountInFirestore(user, unused -> {
+                proceedWithUser(user);
+            });
+            return;
         }
+
+        // If sign-in failed
+        if (response == null) {
+            Log.e("SignInFlow", "Sign-in canceled by user");
+            return;
+        }
+
+        Exception e = response.getError();
+        if (e instanceof FirebaseAuthMultiFactorException) {
+            Log.w("SignInFlow", "Multi-factor authentication required.");
+            handleMfaChallenge((FirebaseAuthMultiFactorException) e);
+            return;
+        }
+
+        Log.e("SignInFlow", "Sign-in error: " + (e != null ? e.getMessage() : "Unknown error"));
+
+        // Fallback: retry delayed FirebaseUser check
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            FirebaseUser delayedUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (delayedUser != null) {
+                Log.d("SignInFlow", "User became available after delay: " + delayedUser.getUid());
+                proceedWithUser(delayedUser);
+            } else {
+                Log.e("SignInFlow", "User still null after retry.");
+            }
+        }, 500);
     }
+
+
 
     // MFA Enrollment
     private void enrollSecondFactor(FirebaseUser user) {
@@ -302,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
         PhoneAuthOptions options = PhoneAuthOptions.newBuilder()
                 .setMultiFactorSession(resolver.getSession())
                 .setActivity(this)
-                .setPhoneNumber("+4407951786254")
+                .setPhoneNumber(phoneInfo.getPhoneNumber())
                 .setTimeout(60L, TimeUnit.SECONDS)
                 .setCallbacks(new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                     @Override
@@ -334,8 +332,12 @@ public class MainActivity extends AppCompatActivity {
 
         builder.setPositiveButton("Verify", (dialog, which) -> {
             String code = input.getText().toString().trim();
-            PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, code);
-            finishMfaSignIn(resolver, credential);
+            if (!code.isEmpty()) {
+                PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, code);
+                finishMfaSignIn(resolver, credential); // ✅ Important
+            } else {
+                Toast.makeText(this, "Code cannot be empty", Toast.LENGTH_SHORT).show();
+            }
         });
 
         builder.setNegativeButton("Cancel", null);
@@ -343,10 +345,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void proceedWithUser(FirebaseUser user) {
+        Log.d("AuthFlow", "proceedWithUser: " + (user != null ? user.getUid() : "null"));
         if (user.getMultiFactor().getEnrolledFactors().isEmpty()) {
-            enrollSecondFactor(user); // MFA enrollment
+            Log.d("AuthFlow", "User has no MFA enrolled → enrolling");
+            enrollSecondFactor(user);
         } else {
-            Log.d("Proceed", "Not enrolling.");
+            Log.d("AuthFlow", "User has MFA → going to VerificationActivity");
             Intent intent = new Intent(MainActivity.this, VerificationActivity.class);
             startActivity(intent);
             finish();
@@ -363,6 +367,7 @@ public class MainActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             FirebaseUser user = task.getResult().getUser();
                             Toast.makeText(this, "Signed in with MFA!", Toast.LENGTH_SHORT).show();
+                            proceedWithUser(user);
                             // Proceed to main app
                         } else {
                             Toast.makeText(this, "MFA sign-in failed", Toast.LENGTH_SHORT).show();
@@ -371,4 +376,5 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
 }
