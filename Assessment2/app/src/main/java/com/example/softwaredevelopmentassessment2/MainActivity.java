@@ -3,6 +3,8 @@ package com.example.softwaredevelopmentassessment2;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import android.content.pm.ApplicationInfo;
@@ -24,11 +26,15 @@ import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.BuildConfig;
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
 import com.firebase.ui.auth.IdpResponse;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.api.Authentication;
 import com.google.firebase.Firebase;
 import com.google.firebase.FirebaseApp;
 
@@ -36,7 +42,6 @@ import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.appcheck.FirebaseAppCheck;
-import com.google.firebase.appcheck.debug.BuildConfig;
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory;
 import com.google.firebase.auth.FirebaseAuth;
@@ -61,16 +66,6 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
-            new FirebaseAuthUIActivityResultContract(),
-            new ActivityResultCallback<FirebaseAuthUIAuthenticationResult>() {
-                @Override
-                public void onActivityResult(FirebaseAuthUIAuthenticationResult result) {
-                    onSignInResult(result);
-                }
-            }
-    );
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +77,15 @@ public class MainActivity extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+        });
+
+        Button GotoAuthButton = findViewById(R.id.GotoAuthButton);
+        GotoAuthButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, VerificationActivity.class);
+                startActivity(intent);
+            }
         });
 
         // 🔐 App Check setup
@@ -139,14 +143,34 @@ public class MainActivity extends AppCompatActivity {
         signInLauncher.launch(signInIntent);
     }
 
+//    GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+//    int status = apiAvailability.isGooglePlayServicesAvailable(Authentication);
+//    if (status != ConnectionResult.SUCCESS) {
+//        // Prompt to install/update Play Services
+//    }
+
+    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
+            new FirebaseAuthUIActivityResultContract(),
+            new ActivityResultCallback<FirebaseAuthUIAuthenticationResult>() {
+                @Override
+                public void onActivityResult(FirebaseAuthUIAuthenticationResult result) {
+                    onSignInResult(result);
+                }
+            }
+    );
+
     // 🔁 Handles result from FirebaseUI sign-in
     private void onSignInResult(FirebaseAuthUIAuthenticationResult result) {
+        Log.d("Signin Result", "Result Returned.");
         IdpResponse response = result.getIdpResponse();
         if (result.getResultCode() == RESULT_OK) {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            Log.d("UserLog", "This is the user data " + user);
             if (user != null && user.getMultiFactor().getEnrolledFactors().isEmpty()) {
+                Log.d("UserLog", "User is logged in");
                 enrollSecondFactor(user); // MFA enrollment
             } else {
+                Log.d("UserLog", "User is not logged in");
                 // MFA already enrolled — proceed to app
                 Intent intent = new Intent(MainActivity.this, VerificationActivity.class);
                 startActivity(intent);
@@ -154,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         } else {
+            Log.d("LoginError", "Something went wrong with the log in.");
             Exception e = result.getIdpResponse() != null ? result.getIdpResponse().getError() : null;
             if (e instanceof FirebaseAuthMultiFactorException) {
                 handleMfaChallenge((FirebaseAuthMultiFactorException) e); // 🔐 MFA challenge
@@ -165,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
 
     // 📲 MFA Enrollment (already in your code)
     private void enrollSecondFactor(FirebaseUser user) {
+        Log.d("Enrollment", "Enrollment Started.");
         PhoneAuthOptions options = PhoneAuthOptions.newBuilder()
                 .setPhoneNumber("+4407951786254") // Replace with dynamic input
                 .setTimeout(60L, TimeUnit.SECONDS)
@@ -203,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
     private void handleMfaChallenge(FirebaseAuthMultiFactorException e) {
         MultiFactorResolver resolver = e.getResolver();
         PhoneMultiFactorInfo phoneInfo = (PhoneMultiFactorInfo) resolver.getHints().get(0); // Assuming one factor
-
+        Log.d("OperationBugun","HandleMFAChallenge.");
         PhoneAuthOptions options = PhoneAuthOptions.newBuilder()
                 .setMultiFactorSession(resolver.getSession())
                 .setActivity(this)
@@ -262,4 +288,5 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
     }
+
 }
