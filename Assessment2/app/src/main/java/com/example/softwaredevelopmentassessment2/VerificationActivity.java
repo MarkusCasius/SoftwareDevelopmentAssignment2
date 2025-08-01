@@ -1,5 +1,6 @@
 package com.example.softwaredevelopmentassessment2;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -48,7 +49,23 @@ public class VerificationActivity extends AppCompatActivity {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             // User is signed in
+            String name = user.getDisplayName();
+            String email = user.getEmail();
+            Uri photoUrl = user.getPhotoUrl();
+
+            // Check if user's email is verified
+            boolean emailVerified = user.isEmailVerified();
+
+            // The user's ID, unique to the Firebase project. Do NOT use this value to
+            // authenticate with your backend server, if you have one. Use
+            // FirebaseUser.getIdToken() instead.
+            String uid = user.getUid();
+
             Log.d("User", "User is signed in");
+            assert email != null;
+            Log.d("User", email);
+            Log.d("User", name);
+            Log.d("User", uid);
         } else {
             // No user is signed in
             Log.d("User", "User is not signed in");
