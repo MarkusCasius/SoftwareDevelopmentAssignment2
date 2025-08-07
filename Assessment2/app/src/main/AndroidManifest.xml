@@ -12,17 +12,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SoftwareDevelopmentAssessment2"
         tools:targetApi="34">
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
+        <activity android:name=".SplashActivity" android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <activity android:name=".MainActivity" />
         <activity android:name=".VerificationActivity"/>
         <activity android:name=".DegreeClassificationCalculatorActivity"/>
+        <activity android:name=".LoginActivity"/>
         <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"
             tools:replace="android:value"/>
         <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/facebook_client_token"/>
