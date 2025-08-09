@@ -169,13 +169,13 @@ public class GradeCalculatorActivity extends AppCompatActivity {
             sb.append("Your Final Grade: ").append(results.get("finalGrade")).append("\n");
         } else if (isPostGrad) {
             sb.append("Your Final Grade: ").append(results.get("finalGrade")).append("\n");
-            sb.append("Average Score: ").append(results.get("average")).append("\n");
+            sb.append("Average Score: ").append(formatDecimal(results.get("average"))).append("\n");
         } else {
-            sb.append("Method A: ").append(results.get("avgA"))
+            sb.append("Method A: ").append(formatDecimal(results.get("avgA")))
                     .append(" → ").append(results.get("classA")).append("\n");
-            sb.append("Method B: ").append(results.get("avgB"))
+            sb.append("Method B: ").append(formatDecimal(results.get("avgB")))
                     .append(" → ").append(results.get("classB")).append("\n");
-            sb.append("Method C: ").append(results.get("avgC"))
+            sb.append("Method C: ").append(formatDecimal(results.get("avgC")))
                     .append(" → ").append(results.get("classC")).append("\n");
 
             String[] classifications = {
@@ -188,5 +188,12 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         }
 
         txtResult.setText(sb.toString());
+    }
+
+    private String formatDecimal(Object value) {
+        if (value instanceof Number) {
+            return String.format("%.1f", ((Number) value).doubleValue());
+        }
+        return value != null ? value.toString() : "";
     }
 }

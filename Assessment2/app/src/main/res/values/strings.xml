@@ -6,4 +6,6 @@
     <string name="facebook_app_id">1582498339780584</string>
     <string name="fb_login_protocol_scheme">fb1582498339780584</string>
     <string name="facebook_client_token">3589b1033f30305fa1817ae588637dcb</string>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
 </resources>

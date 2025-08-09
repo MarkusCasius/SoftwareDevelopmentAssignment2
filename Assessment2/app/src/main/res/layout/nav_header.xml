@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="160dp"
+    android:background="#6200EE"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="bottom">
+
+<ImageView
+android:id="@+id/imageViewUser"
+android:layout_width="72dp"
+android:layout_height="72dp"
+android:src="@drawable/ic_user_placeholder"
+android:scaleType="centerCrop" />
+
+<!--    <TextView-->
+<!--        android:id="@+id/nav_header_title"-->
+<!--        android:text="Welcome, User"-->
+<!--        android:textColor="#fff"-->
+<!--        android:textSize="18sp"-->
+<!--        android:layout_marginTop="8dp"/>-->
+
+</LinearLayout>

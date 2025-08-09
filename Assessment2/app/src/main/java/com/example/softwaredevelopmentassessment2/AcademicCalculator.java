@@ -62,13 +62,13 @@ public class AcademicCalculator {
     }
 
     // Returns the grade/classification of the average from the module/course.
-    public static String CheckClassification(double achievedAverage, boolean isPostGrad) {
+    public static String CheckClassification(double achievedAverage, boolean isUnderGrad) {
         double first = 69.50;
         double twoOne = 59.50;
         double twoTwo = 49.50;
         double third = 39.50;
 
-        if (isPostGrad) {
+        if (isUnderGrad) {
             if (achievedAverage >= first) {
                 return ("1st");
             } else if (achievedAverage >= twoOne) {
