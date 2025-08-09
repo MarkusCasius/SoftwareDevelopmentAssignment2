@@ -49,8 +49,8 @@ public abstract class BaseActivity extends AppCompatActivity {
                 // Handle Home navigation
                 drawerLayout.closeDrawers();
             } else if (id == R.id.nav_profile) {
-                // Navigate to GradeCalculatorActivity
-                startActivity(new Intent(this, GradeCalculatorActivity.class));
+                // Navigate to Profile
+                startActivity(new Intent(this, ProfileActivity.class));
                 drawerLayout.closeDrawers();
             } else if (id == R.id.nav_settings) {
                 // Navigate to GradeCalculatorActivity
@@ -58,6 +58,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                 drawerLayout.closeDrawers();
             } else if (id == R.id.nav_calculator) {
                 // Navigate to GradeCalculatorActivity
+                Log.d("NavMenu", "Navigating to Calculator.");
                 startActivity(new Intent(this, GradeCalculatorActivity.class));
                 drawerLayout.closeDrawers();
             } else if (id == R.id.nav_sign_out) {

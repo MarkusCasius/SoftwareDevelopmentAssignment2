@@ -63,6 +63,14 @@ public class MainActivity extends BaseActivity {
             if (id == R.id.nav_home) {
                 // Handle Home navigation
                 drawerLayout.closeDrawers();
+            } else if (id == R.id.nav_profile) {
+                // Navigate to Profile
+                startActivity(new Intent(MainActivity.this, ProfileActivity.class));
+                drawerLayout.closeDrawers();
+            } else if (id == R.id.nav_settings) {
+                // Navigate to GradeCalculatorActivity
+                startActivity(new Intent(MainActivity.this, GradeCalculatorActivity.class));
+                drawerLayout.closeDrawers();
             } else if (id == R.id.nav_calculator) {
                 // Navigate to GradeCalculatorActivity
                 startActivity(new Intent(MainActivity.this, GradeCalculatorActivity.class));

@@ -22,6 +22,7 @@
         <activity android:name=".VerificationActivity"/>
         <activity android:name=".GradeCalculatorActivity"/>
         <activity android:name=".LoginActivity"/>
+        <activity android:name=".ProfileActivity"/>
         <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"
             tools:replace="android:value"/>
         <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/facebook_client_token"/>
