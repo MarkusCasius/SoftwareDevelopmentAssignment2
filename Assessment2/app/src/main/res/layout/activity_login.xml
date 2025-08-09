@@ -25,6 +25,16 @@
             android:hint="Password"
             android:inputType="textPassword" />
 
+        <TextView
+            android:id="@+id/forgotPasswordText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingTop="12dp"
+            android:text="Forgot Password?"
+            android:textColor="#03A9F4" />
+
         <Button
             android:id="@+id/loginButton"
             android:layout_width="match_parent"

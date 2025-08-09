@@ -3,6 +3,7 @@ package com.example.softwaredevelopmentassessment2;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -10,29 +11,43 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 public class ProfileActivity extends AppCompatActivity {
+
+    private static final int IMAGE_PICK_REQUEST_CODE = 1001;
 
     private ImageView profileImageView;
     private TextView userNameTextView, userEmailTextView;
-    private Spinner courseSpinner; // or EditText
-    private Switch themeSwitch; // example for dark mode
+    private Spinner courseSpinner;
+    private Switch themeSwitch;
     private Button saveButton;
 
     private FirebaseUser currentUser;
     private FirebaseFirestore firestore;
-    private StorageReference storageRef;
 
     private Uri selectedImageUri;
 
-    private static final int IMAGE_PICK_REQUEST_CODE = 1001;
+    // For course mapping
+    private List<String> courseIds = new ArrayList<>();
+    private List<String> courseNames = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,13 +63,12 @@ public class ProfileActivity extends AppCompatActivity {
 
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         firestore = FirebaseFirestore.getInstance();
-        storageRef = FirebaseStorage.getInstance().getReference();
 
         loadUserInfo();
+        loadCourses(); // load available courses
         loadUserExtraData();
 
         profileImageView.setOnClickListener(v -> openImagePicker());
-
         saveButton.setOnClickListener(v -> saveUserProfile());
     }
 
@@ -63,20 +77,64 @@ public class ProfileActivity extends AppCompatActivity {
             userNameTextView.setText(currentUser.getDisplayName());
             userEmailTextView.setText(currentUser.getEmail());
 
-            // Load profile image URL from Firestore or use currentUser.getPhotoUrl()
-            // Use Glide or Picasso to load into profileImageView
+            firestore.collection("account").document(currentUser.getUid())
+                    .get()
+                    .addOnSuccessListener(document -> {
+                        if (document.exists()) {
+                            String localPath = document.getString("profileImagePath");
+                            if (localPath != null) {
+                                File imgFile = new File(localPath);
+                                if (imgFile.exists()) {
+                                    profileImageView.setImageURI(Uri.fromFile(imgFile));
+                                }
+                            }
+                        }
+                    });
         }
     }
 
+    private void loadCourses() {
+        firestore.collection("course")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    courseIds.clear();
+                    courseNames.clear();
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        String id = doc.getString("courseID");
+                        String name = doc.getString("name");
+                        if (id != null && name != null) {
+                            courseIds.add(id);
+                            courseNames.add(name);
+                        }
+                    }
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                            android.R.layout.simple_spinner_item, courseNames);
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    courseSpinner.setAdapter(adapter);
+
+                    // Once courses are loaded, select user's current course
+                    loadUserExtraData();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load courses", Toast.LENGTH_SHORT).show()
+                );
+    }
+
     private void loadUserExtraData() {
-        firestore.collection("users").document(currentUser.getUid()).get()
+        firestore.collection("account").document(currentUser.getUid()).get()
                 .addOnSuccessListener(document -> {
                     if (document.exists()) {
-                        String course = document.getString("course");
-                        boolean darkMode = document.getBoolean("darkMode") != null ? document.getBoolean("darkMode") : false;
-                        // Set these to UI
-                        // e.g. courseSpinner.setSelection(...) based on course
+                        String courseId = document.getString("course");
+                        boolean darkMode = Boolean.TRUE.equals(document.getBoolean("darkMode"));
                         themeSwitch.setChecked(darkMode);
+
+                        // Set spinner selection based on courseId
+                        if (courseId != null && !courseIds.isEmpty()) {
+                            int index = courseIds.indexOf(courseId);
+                            if (index >= 0) {
+                                courseSpinner.setSelection(index);
+                            }
+                        }
                     }
                 });
     }
@@ -89,43 +147,79 @@ public class ProfileActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == IMAGE_PICK_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             selectedImageUri = data.getData();
-            profileImageView.setImageURI(selectedImageUri);
-            uploadProfilePicture(selectedImageUri);
+            if (selectedImageUri != null) {
+                try {
+                    // Copy the selected image to internal storage
+                    String localPath = copyImageToInternalStorage(selectedImageUri);
+
+                    // Display immediately
+                    profileImageView.setImageURI(Uri.parse(localPath));
+
+                    // Save path to Firestore
+                    saveProfileImagePath(localPath);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Toast.makeText(this, "Failed to save image", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
-    private void uploadProfilePicture(Uri imageUri) {
-        StorageReference profilePicRef = storageRef.child("profile_pictures/" + currentUser.getUid() + ".jpg");
-        profilePicRef.putFile(imageUri)
-                .addOnSuccessListener(taskSnapshot -> profilePicRef.getDownloadUrl()
-                        .addOnSuccessListener(uri -> {
-                            // Save uri.toString() in Firestore under user's document
-                            firestore.collection("users").document(currentUser.getUid())
-                                    .update("profileImageUrl", uri.toString());
-                        }))
-                .addOnFailureListener(e -> {
-                    // Handle failure
-                });
+// Copies the picked image into app's private storage and returns the file path.
+    private String copyImageToInternalStorage(Uri imageUri) throws IOException {
+        // Create a unique file name
+        String fileName = "profile_" + System.currentTimeMillis() + ".jpg";
+        File file = new File(getFilesDir(), fileName);
+
+        try (InputStream inputStream = getContentResolver().openInputStream(imageUri);
+             OutputStream outputStream = new FileOutputStream(file)) {
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, length);
+            }
+        }
+
+        return file.getAbsolutePath();
+    }
+
+    private void saveProfileImagePath(String localPath) {
+        firestore.collection("account").document(currentUser.getUid())
+                .update("profileImagePath", localPath)
+                .addOnSuccessListener(aVoid ->
+                        Toast.makeText(this, "Profile picture updated", Toast.LENGTH_SHORT).show()
+                )
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to save profile picture path", Toast.LENGTH_SHORT).show()
+                );
     }
 
     private void saveUserProfile() {
-        String selectedCourse = courseSpinner.getSelectedItem().toString();
+        int selectedIndex = courseSpinner.getSelectedItemPosition();
+        if (selectedIndex < 0 || selectedIndex >= courseIds.size()) {
+            Toast.makeText(this, "Please select a course", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String selectedCourseId = courseIds.get(selectedIndex);
         boolean darkModeEnabled = themeSwitch.isChecked();
 
-        firestore.collection("users").document(currentUser.getUid())
+        firestore.collection("account").document(currentUser.getUid())
                 .update(
-                        "course", selectedCourse,
+                        "accountCourse", selectedCourseId,
                         "darkMode", darkModeEnabled
                 )
-                .addOnSuccessListener(aVoid -> {
-                    // Maybe apply theme change immediately
-                    Toast.makeText(this, "Profile updated", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error updating profile", Toast.LENGTH_SHORT).show();
-                });
+                .addOnSuccessListener(aVoid ->
+                        Toast.makeText(this, "Profile updated", Toast.LENGTH_SHORT).show()
+                )
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error updating profile", Toast.LENGTH_SHORT).show()
+                );
     }
 }

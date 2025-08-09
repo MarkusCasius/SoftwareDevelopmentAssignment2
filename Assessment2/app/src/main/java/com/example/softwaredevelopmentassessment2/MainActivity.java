@@ -95,6 +95,13 @@ public class MainActivity extends BaseActivity {
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivity(intent);
             finish();
+        } else {
+            FirestoreDatabase.ensureUserAccountInFirestore(currentUser, result -> {
+                // This runs when the check/create finishes
+                Log.d("MainActivity", "User check completed");
+                // You can do further setup here if needed
+            });
         }
+
     }
 }
