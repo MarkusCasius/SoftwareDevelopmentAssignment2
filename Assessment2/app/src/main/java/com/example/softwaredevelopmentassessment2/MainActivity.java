@@ -13,6 +13,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
 
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -22,104 +23,61 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
     private DrawerLayout drawerLayout;
-    private ActionBarDrawerToggle drawerToggle;
+    private ActionBarDrawerToggle toggle;
     private NavigationView navigationView;
+    private MaterialToolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d("AuthFlow", "onCreate: Activity started");
-        FirebaseApp.initializeApp(this);
-        // FirestoreSeeder.seedDatabase();
-        EdgeToEdge.enable(this);
+        setupDrawer(R.layout.activity_main);
         setContentView(R.layout.activity_main);
 
-
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        drawerLayout = findViewById(R.id.main);
-
-        drawerToggle = new ActionBarDrawerToggle(
-                this,
-                drawerLayout,
-                toolbar,               // pass toolbar here
-                R.string.drawer_open,
-                R.string.drawer_close
-        );
-
-        drawerLayout.addDrawerListener(drawerToggle);
-        drawerToggle.syncState();
-
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setHomeButtonEnabled(true);
-        }
-
-
-        // Setup DrawerLayout and NavigationView
         drawerLayout = findViewById(R.id.main);
         navigationView = findViewById(R.id.nav_view);
+        toolbar = findViewById(R.id.toolbar);
 
-        // Setup ActionBarDrawerToggle to show hamburger icon and sync state
-        drawerToggle = new ActionBarDrawerToggle(
-                this, drawerLayout,
-                R.string.drawer_open,  // You should add these strings in res/values/strings.xml
-                R.string.drawer_close
-        );
-        drawerLayout.addDrawerListener(drawerToggle);
-        drawerToggle.syncState();
+        setSupportActionBar(toolbar);
 
-        // Enable the hamburger icon in the action bar
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar,
+                R.string.drawer_open, R.string.drawer_close);
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+
+        // Load default fragment
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new HomeFragment())
+                    .commit();
+            navigationView.setCheckedItem(R.id.nav_home);
         }
 
-        // Handle NavigationView item clicks
+        // Handle navigation item selection
         navigationView.setNavigationItemSelectedListener(menuItem -> {
             int id = menuItem.getItemId();
 
             if (id == R.id.nav_home) {
-                // Example: close drawer if already home
+                // Handle Home navigation
                 drawerLayout.closeDrawers();
             } else if (id == R.id.nav_calculator) {
+                // Navigate to GradeCalculatorActivity
                 startActivity(new Intent(MainActivity.this, GradeCalculatorActivity.class));
                 drawerLayout.closeDrawers();
             } else if (id == R.id.nav_sign_out) {
+                // Handle sign out
                 AuthUI.getInstance().signOut(MainActivity.this)
                         .addOnCompleteListener(task -> {
                             Log.d("AuthFlow", "Sign out complete");
                             drawerLayout.closeDrawers();
                         });
             }
-            // Add more cases as needed
+            // Add more else-if cases as needed
 
             return true;
-        });
-
-        Button GotoAuthButton = findViewById(R.id.GotoAuthButton);
-        GotoAuthButton.setOnClickListener(v -> {
-            Log.d("AuthFlow", "GotoAuthButton clicked → launching VerificationActivity");
-            Intent intent = new Intent(MainActivity.this, VerificationActivity.class);
-            startActivity(intent);
-            finish();
-        });
-
-        Button SignOutButton = findViewById(R.id.SignOutButton);
-        SignOutButton.setOnClickListener(v -> {
-            Log.d("AuthFlow", "SignOutButton clicked → signing out");
-            AuthUI.getInstance().signOut(MainActivity.this)
-                    .addOnCompleteListener(task -> Log.d("AuthFlow", "Sign out complete"));
-        });
-
-        Button CalculatorNavigateButton = findViewById(R.id.CalculatorNavigateButton);
-        CalculatorNavigateButton.setOnClickListener(v -> {
-            Log.d("AuthFlow", "Calculator clicked → launching CalculatorActivity");
-            Intent intent = new Intent(MainActivity.this, GradeCalculatorActivity.class);
-            startActivity(intent);
         });
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -130,14 +88,5 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
-    }
-
-    // Make sure the hamburger menu works by overriding onOptionsItemSelected
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (drawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 }
