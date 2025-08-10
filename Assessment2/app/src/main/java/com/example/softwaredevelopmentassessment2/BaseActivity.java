@@ -66,7 +66,9 @@ public abstract class BaseActivity extends AppCompatActivity {
                 AuthUI.getInstance().signOut(this)
                         .addOnCompleteListener(task -> {
                             Log.d("AuthFlow", "Sign out complete");
+                            startActivity(new Intent(this, SplashActivity.class));
                             drawerLayout.closeDrawers();
+                            finish();
                         });
             }
             // Add more else-if cases as needed

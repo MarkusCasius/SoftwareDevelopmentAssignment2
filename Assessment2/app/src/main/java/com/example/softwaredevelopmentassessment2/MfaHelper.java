@@ -26,26 +26,26 @@ public class MfaHelper {
 
     public static void handleMfaChallenge(Activity activity, FirebaseAuthMultiFactorException e) {
         MultiFactorResolver resolver = e.getResolver();
-        MultiFactorSession session = resolver.getSession(); // ✅ Already provided
+        MultiFactorSession session = resolver.getSession();
 
-        // Get the phone factor from the hints
-        PhoneMultiFactorInfo phoneInfo = null;
+        // Select the first phone factor hint
+        PhoneMultiFactorInfo selectedHint = null;
         for (MultiFactorInfo hint : resolver.getHints()) {
             if (hint instanceof PhoneMultiFactorInfo) {
-                phoneInfo = (PhoneMultiFactorInfo) hint;
+                selectedHint = (PhoneMultiFactorInfo) hint;
                 break;
             }
         }
 
-        if (phoneInfo == null) {
+        if (selectedHint == null) {
             Toast.makeText(activity, "No phone MFA factor found", Toast.LENGTH_LONG).show();
             return;
         }
 
-        PhoneAuthOptions options = PhoneAuthOptions.newBuilder(FirebaseAuth.getInstance())
-                .setMultiFactorSession(session) // ✅ Use this, not user.getMultiFactor().getSession()
+        PhoneAuthOptions options = PhoneAuthOptions.newBuilder()
                 .setActivity(activity)
-                .setPhoneNumber(phoneInfo.getPhoneNumber())
+                .setMultiFactorSession(session)
+                .setMultiFactorHint(selectedHint)  // Use MultiFactorHint here!
                 .setTimeout(60L, TimeUnit.SECONDS)
                 .setCallbacks(new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                     @Override
@@ -64,8 +64,8 @@ public class MfaHelper {
                     }
                 }).build();
 
-                    PhoneAuthProvider.verifyPhoneNumber(options);
-                }
+        PhoneAuthProvider.verifyPhoneNumber(options);
+    }
 
     private static void showCodeEntryDialog(Activity activity, String verificationId, MultiFactorResolver resolver) {
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
@@ -185,7 +185,7 @@ public class MfaHelper {
         if (user.getMultiFactor().getEnrolledFactors().isEmpty()) {
             enrollSecondFactor(activity, user);
         } else {
-            Intent intent = new Intent(activity, VerificationActivity.class);
+            Intent intent = new Intent(activity, MainActivity.class);
             activity.startActivity(intent);
             activity.finish();
         }

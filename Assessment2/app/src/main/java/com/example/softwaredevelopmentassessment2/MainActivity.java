@@ -81,6 +81,8 @@ public class MainActivity extends BaseActivity {
                         .addOnCompleteListener(task -> {
                             Log.d("AuthFlow", "Sign out complete");
                             drawerLayout.closeDrawers();
+                            startActivity(new Intent(this, SplashActivity.class));
+                            finish();
                         });
             }
             // Add more else-if cases as needed
