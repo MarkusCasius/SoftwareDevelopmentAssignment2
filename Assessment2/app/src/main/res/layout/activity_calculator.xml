@@ -2,6 +2,7 @@
 <androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -30,7 +31,7 @@
             android:layout_height="0dp"
             android:fillViewport="true"
             app:layout_constraintTop_toBottomOf="@id/toolbar"
-            app:layout_constraintBottom_toTopOf="@id/btnCalculate"
+            app:layout_constraintBottom_toTopOf="@id/controlsLayout"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:padding="16dp">
@@ -56,21 +57,44 @@
                         android:text="Your Mark"
                         android:textStyle="bold"
                         android:padding="8dp" />
+
+                    <TextView
+                        android:text="Optional?"
+                        android:textStyle="bold"
+                        android:padding="8dp" />
                 </TableRow>
             </TableLayout>
         </ScrollView>
 
-        <!-- Calculate button -->
-        <Button
-            android:id="@+id/btnCalculate"
+        <!-- Controls Layout (desired grade + button) -->
+        <LinearLayout
+            android:id="@+id/controlsLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Calculate Grade"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
             app:layout_constraintBottom_toTopOf="@id/txtResult"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="8dp"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <EditText
+                android:id="@+id/desiredGradeInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Desired final grade (%)"
+                android:inputType="numberDecimal"
+                android:padding="8dp"
+                android:background="@android:drawable/edit_text" />
+
+            <Button
+                android:id="@+id/btnCalculate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Calculate" />
+        </LinearLayout>
 
         <!-- Result TextView -->
         <TextView

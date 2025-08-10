@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -58,6 +59,7 @@ public class LoginActivity extends AppCompatActivity {
     private CallbackManager callbackManager;
     private static final int RC_GOOGLE_SIGN_IN = 1001;
     private GoogleSignInClient googleClient;
+    private TextView forgotPasswordText;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -137,7 +139,9 @@ public class LoginActivity extends AppCompatActivity {
         // Facebook callback setup
         callbackManager = CallbackManager.Factory.create();
 
-
+        // Password reset
+        forgotPasswordText = findViewById(R.id.forgotPasswordText);
+        forgotPasswordText.setOnClickListener(v -> showPasswordResetDialog());
     }
 
     @Override
@@ -196,6 +200,37 @@ public class LoginActivity extends AppCompatActivity {
                         MfaHelper.proceedWithUser(this, user); // Offer to enroll MFA
                     } else {
                         Toast.makeText(this, "Sign-up failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void showPasswordResetDialog() {
+        EditText resetEmailInput = new EditText(this);
+        resetEmailInput.setHint("Enter your email");
+
+        new AlertDialog.Builder(this)
+                .setTitle("Reset Password")
+                .setMessage("Enter your email to receive password reset instructions.")
+                .setView(resetEmailInput)
+                .setPositiveButton("Send", (dialog, which) -> {
+                    String email = resetEmailInput.getText().toString().trim();
+                    if (!email.isEmpty()) {
+                        sendPasswordResetEmail(email);
+                    } else {
+                        Toast.makeText(this, "Please enter your email", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void sendPasswordResetEmail(String email) {
+        mAuth.sendPasswordResetEmail(email)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(this, "Password reset email sent", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Failed to send reset email", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
