@@ -48,7 +48,7 @@ public class MainActivity extends BaseActivity {
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // Load default fragment
+        // Load fragment for the navigation bar
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, new HomeFragment())
@@ -67,10 +67,6 @@ public class MainActivity extends BaseActivity {
                 // Navigate to Profile
                 startActivity(new Intent(MainActivity.this, ProfileActivity.class));
                 drawerLayout.closeDrawers();
-            } else if (id == R.id.nav_settings) {
-                // Navigate to GradeCalculatorActivity
-                startActivity(new Intent(MainActivity.this, GradeCalculatorActivity.class));
-                drawerLayout.closeDrawers();
             } else if (id == R.id.nav_calculator) {
                 // Navigate to GradeCalculatorActivity
                 startActivity(new Intent(MainActivity.this, GradeCalculatorActivity.class));
@@ -85,11 +81,11 @@ public class MainActivity extends BaseActivity {
                             finish();
                         });
             }
-            // Add more else-if cases as needed
 
             return true;
         });
 
+        // Check for whether the user is signed in, otherwise redirect to Login activity.
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             // User not signed in
@@ -99,9 +95,7 @@ public class MainActivity extends BaseActivity {
             finish();
         } else {
             FirestoreDatabase.ensureUserAccountInFirestore(currentUser, result -> {
-                // This runs when the check/create finishes
                 Log.d("MainActivity", "User check completed");
-                // You can do further setup here if needed
             });
         }
 

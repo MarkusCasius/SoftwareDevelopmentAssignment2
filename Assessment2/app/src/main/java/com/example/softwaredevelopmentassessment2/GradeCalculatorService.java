@@ -8,6 +8,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,10 +58,14 @@ public class GradeCalculatorService {
                         ? AcademicCalculator.FoundationMethod(creditsAll, marksAll)
                         : AcademicCalculator.PostgraduateMethod(creditsAll, marksAll);
 
-                callback.onComplete(Map.of(
-                        "finalGrade", finalGrade,
-                        "average", isFoundation ? null : AcademicCalculator.GetCourseAverage(creditsAll, marksAll)
-                ));
+                Map<String, Object> resultMap = new HashMap<>();
+                resultMap.put("finalGrade", finalGrade);
+
+                if (!isFoundation) {
+                    resultMap.put("average", AcademicCalculator.GetCourseAverage(creditsAll, marksAll));
+                }
+
+                callback.onComplete(resultMap);
 
             } else {
                 // Undergrad path
@@ -102,11 +107,15 @@ public class GradeCalculatorService {
                 String classB = AcademicCalculator.CheckClassification(avgB, altGrading);
                 String classC = AcademicCalculator.CheckClassification(avgC, altGrading);
 
-                callback.onComplete(Map.of(
-                        "avgA", avgA, "classA", classA,
-                        "avgB", avgB, "classB", classB,
-                        "avgC", avgC, "classC", classC
-                ));
+                Map<String, Object> resultMap = new HashMap<>();
+                resultMap.put("avgA", avgA);
+                resultMap.put("classA", classA);
+                resultMap.put("avgB", avgB);
+                resultMap.put("classB", classB);
+                resultMap.put("avgC", avgC);
+                resultMap.put("classC", classC);
+
+                callback.onComplete(resultMap);
             }
         }).addOnFailureListener(callback::onError);
     }

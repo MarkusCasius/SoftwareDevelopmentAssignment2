@@ -73,6 +73,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         btnCalculate.setOnClickListener(v -> calculateGrades());
     }
 
+    // Module for loading the course and modules, by referencing the user's account and the course assigned to it.
     private void loadCourseAndModules() {
         FirestoreDatabase.findCourseFromAccount(username, course -> {
             if (!course.isEmpty()) {
@@ -105,6 +106,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         });
     }
 
+    // Retrieves information about the courses modules and passes it onto the addModuleRow function
     private void loadModules() {
         db.collection("modules")
                 .whereEqualTo("courseID", courseID)
@@ -128,6 +130,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
                 );
     }
 
+    // Populates the table with modules, with their respective names, credits, a marks field and a tick box if it is a optional module.
     private void addModuleRow(String moduleId, String name, int credits, boolean isCore, int level) {
         TableRow row = new TableRow(this);
 
@@ -139,7 +142,6 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         creditsView.setText(String.valueOf(credits));
         creditsView.setPadding(8, 8, 8, 8);
 
-        // mark input
         EditText markInput = new EditText(this);
         markInput.setInputType(InputType.TYPE_CLASS_NUMBER);
         markInput.setHint("Enter mark");
@@ -171,6 +173,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         moduleLevelMap.put(moduleId, level);
     }
 
+    // Module for checking the filled marks of the modules, and ensuring the necessary optional modules was selected to begin the calculator.
     private void calculateGrades() {
         // Check optional modules selected
         for (String moduleId : moduleIds) {
@@ -234,7 +237,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
                 });
     }
 
-// Method for the grade tracker to provide statistics on how to achieve the desired overall mark
+    // Method for the grade tracker to provide statistics on how to achieve the desired overall mark.
     private Map<String, Double> calculateRequiredMarks(Map<String, Integer> enteredMarks, double desiredGrade) {
         double totalCredits = 0;
         double knownWeightedSumTotal = 0;
@@ -272,9 +275,8 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         Map<String, Double> bestCandidate = null;
         double bestScore = Double.MAX_VALUE; // pick method with lowest required mark (easiest)
 
-        // FOUNDATION
+        // Foundation Calculation
         if (isFoundation) {
-            // foundation uses credit-pool of modules with mark >= FOUNDATION_PASS_THRESHOLD
             int creditPool = 0;
             for (String mid : moduleIds) {
                 Integer m = enteredMarks.get(mid);
@@ -282,12 +284,12 @@ public class GradeCalculatorActivity extends AppCompatActivity {
                 if (m != null && m >= FOUNDATION_PASS_THRESHOLD) creditPool += cr;
             }
             if (creditPool >= FOUNDATION_PASS_CREDITS) {
-                // already passing -> nothing required
+                // pass successful, no required advice
                 Toast.makeText(this, "Foundation pass already satisfied.", Toast.LENGTH_SHORT).show();
                 return Collections.emptyMap();
             } else {
-                // we need to set some missing modules to pass threshold until we reach 120 credits (greedy by credits)
-                // collect missing modules sorted by credits desc
+                // unsuccessful, advice to be given
+                // collect missing modules sorted by credits
                 List<String> missingSorted = new ArrayList<>(missingModuleIds);
                 missingSorted.sort((a, b) -> Integer.compare(creditsMap.get(b), creditsMap.get(a)));
 
@@ -301,12 +303,11 @@ public class GradeCalculatorActivity extends AppCompatActivity {
                 }
 
                 if (pool >= FOUNDATION_PASS_CREDITS) {
-                    // feasible -> but make sure threshold is in 0..100
+                    // possible to achieve pass
                     if (FOUNDATION_PASS_THRESHOLD < 0 || FOUNDATION_PASS_THRESHOLD > 100) {
                         Toast.makeText(this, "Impossible target for foundation.", Toast.LENGTH_LONG).show();
                         return Collections.emptyMap();
                     }
-                    // choose this candidate (only if it's better — here we choose foundation directly)
                     return candidate;
                 } else {
                     Toast.makeText(this, "Impossible: not enough credits to pass foundation even if you pass all missing modules.", Toast.LENGTH_LONG).show();
@@ -315,7 +316,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
             }
         }
 
-        // POSTGRAD
+        // Post graduate
         if (isPostGrad) {
             if (missingCreditsTotal == 0) {
                 double currentAvg = knownWeightedSumTotal / totalCredits;
@@ -339,13 +340,10 @@ public class GradeCalculatorActivity extends AppCompatActivity {
             }
         }
 
-        // ---------- UNDERGRAD: try Method A, B, C ----------
+        // Undergraduate - Method's A through C
         if (!isPostGrad && !isFoundation) {
-            // compute known averages (use totals, avoid divide-by-zero)
-            double knownPartL5 = (totalCreditsL5 > 0) ? knownWeightedSumL5 / totalCreditsL5 : 0.0;
-            double knownPartL6 = (totalCreditsL6 > 0) ? knownWeightedSumL6 / totalCreditsL6 : 0.0;
 
-            // METHOD A: (L5avg + L6avg) / 2 = desired  => L5avg + L6avg = 2*desired
+            // Method A: (L5avg + L6avg) / 2 = desired  => L5avg + L6avg = 2*desired
             double denomA = ( (missingCreditsL5 > 0 && totalCreditsL5>0) ? (missingCreditsL5 / totalCreditsL5) : 0.0 )
                     + ( (missingCreditsL6 > 0 && totalCreditsL6>0) ? (missingCreditsL6 / totalCreditsL6) : 0.0 );
 
@@ -358,7 +356,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
                     if (xA < bestScore) { bestCandidate = cand; bestScore = xA; }
                 }
             } else {
-                // no missing credits in either level -> check if current meets desired
+                // check if current result equals desired result, given no missing module marks
                 double curL5 = (totalCreditsL5>0) ? knownWeightedSumL5 / totalCreditsL5 : 0.0;
                 double curL6 = (totalCreditsL6>0) ? knownWeightedSumL6 / totalCreditsL6 : 0.0;
                 double finalA = (curL5 + curL6) / 2.0;
@@ -368,7 +366,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
                 } // else impossible for A because no missing marks
             }
 
-            // METHOD B: (L5avg + 2*L6avg) / 3 = desired  => L5avg + 2*L6avg = 3*desired
+            // Method B: (L5avg + 2*L6avg) / 3 = desired  => L5avg + 2*L6avg = 3*desired
             double denomB = ( (missingCreditsL5 > 0 && totalCreditsL5>0) ? (missingCreditsL5 / totalCreditsL5) : 0.0 )
                     + 2.0 * ( (missingCreditsL6 > 0 && totalCreditsL6>0) ? (missingCreditsL6 / totalCreditsL6) : 0.0 );
 
@@ -390,7 +388,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
                 }
             }
 
-            // METHOD C: L6avg = desired  -> only L6 matters
+            // Method C: L6avg = desired  -> only L6 matters
             if (totalCreditsL6 > 0) {
                 if (missingCreditsL6 == 0) {
                     double currentL6avg = knownWeightedSumL6 / totalCreditsL6;
@@ -398,11 +396,10 @@ public class GradeCalculatorActivity extends AppCompatActivity {
                         // already achieved
                         Toast.makeText(this, "Desired achieved already by Method C", Toast.LENGTH_SHORT).show();
                         return Collections.emptyMap();
-                    } // else impossible for C because no missing L6 marks
+                    } // else impossible for C because no missing marks
                 } else {
                     double xC = (desiredGrade * totalCreditsL6 - knownWeightedSumL6) / missingCreditsL6;
                     if (xC >= 0 && xC <= 100) {
-                        // Only L6 missing modules matter; set predictions only for missing L6 modules
                         Map<String, Double> cand = new HashMap<>();
                         for (String mid : missingModuleIds) {
                             Integer lvl = moduleLevelMap.get(mid);
@@ -410,7 +407,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
                                 cand.put(mid, xC);
                             }
                         }
-                        if (!cand.isEmpty() && xC < bestScore) { bestCandidate = cand; bestScore = xC; }
+                        if (!cand.isEmpty() && xC < bestScore) { bestCandidate = cand; }
                     }
                 }
             }
@@ -422,7 +419,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
             return Collections.emptyMap();
         }
 
-        // Final validation: ensure all predicted values in 0-100
+        // Final validation: ensure all predicted values are within range of 0 to 100
         for (double v : bestCandidate.values()) {
             if (Double.isNaN(v) || v < 0 || v > 100) {
                 Toast.makeText(this, "Calculated required marks are out of bounds (0–100).", Toast.LENGTH_LONG).show();
@@ -433,6 +430,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         return bestCandidate;
     }
 
+    // Method used to show the necessary marks on the table to achieve the desired overall mark.
     private void highlightPredictedMarks(Map<String, Double> predictedMarks) {
         clearPredictedHints();
 
@@ -447,6 +445,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         }
     }
 
+    // Removes previous prediction aids.
     private void clearPredictedHints() {
         for (EditText et : markInputs.values()) {
             et.setHint("Enter mark");
@@ -454,6 +453,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         }
     }
 
+    // Outputs the results from each method.
     private void displayFormattedResults(Map<String, Object> results) {
         StringBuilder sb = new StringBuilder();
 
@@ -497,6 +497,7 @@ public class GradeCalculatorActivity extends AppCompatActivity {
         txtResult.setText(sb.toString());
     }
 
+    // Method used for formatting decimal places.
     private String formatDecimal(Object value) {
         if (value instanceof Number) {
             return String.format(Locale.getDefault(), "%.1f", ((Number) value).doubleValue());

@@ -13,9 +13,10 @@ import androidx.fragment.app.Fragment;
 
 import com.firebase.ui.auth.AuthUI;
 
+// Began development on using fragments for the app, however it didn't get far as issues with layout kept hindering progress and was disregarded
+// for later development.
 public class HomeFragment extends Fragment {
 
-    private Button gotoAuthButton;
     private Button signOutButton;
     private Button calculatorNavigateButton;
 
@@ -26,16 +27,8 @@ public class HomeFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-        gotoAuthButton = view.findViewById(R.id.GotoAuthButton);
         signOutButton = view.findViewById(R.id.SignOutButton);
         calculatorNavigateButton = view.findViewById(R.id.CalculatorNavigateButton);
-
-        gotoAuthButton.setOnClickListener(v -> {
-            Log.d("HomeFragment", "GotoAuthButton clicked → launching VerificationActivity");
-            Intent intent = new Intent(getActivity(), VerificationActivity.class);
-            startActivity(intent);
-            getActivity().finish();  // if you want to finish the hosting activity
-        });
 
         signOutButton.setOnClickListener(v -> {
             Log.d("HomeFragment", "SignOutButton clicked → signing out");

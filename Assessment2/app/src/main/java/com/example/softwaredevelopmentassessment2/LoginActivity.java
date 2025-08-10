@@ -66,10 +66,10 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         FirebaseFirestore.setLoggingEnabled(true);
 
-        // 🔐 App Check setup
+        // Sets up the firebase connection
         Log.d("AuthFlow", "Setting up AppCheck");
         FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
-        if (true) { // Debug mode for now
+        if (true) { // For toggling between Debugging and checking PlayIntegrity settings
             firebaseAppCheck.installAppCheckProviderFactory(DebugAppCheckProviderFactory.getInstance());
             Log.d("AuthFlow", "AppCheck: Debug provider installed");
         } else {
@@ -77,6 +77,7 @@ public class LoginActivity extends AppCompatActivity {
             Log.d("AuthFlow", "AppCheck: PlayIntegrity provider installed");
         }
 
+        // Test the connection by writing a test document. Also used to log whenever a connection is established.
         FirebaseAppCheck.getInstance().getToken(false)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -166,6 +167,7 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    // For logging in with base user email and password
     private void loginUser() {
         String email = emailField.getText().toString().trim();
         String password = passwordField.getText().toString().trim();
@@ -175,7 +177,7 @@ public class LoginActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
-                            MfaHelper.proceedWithUser(this, user); // Reuse your MFA check logic
+                            MfaHelper.proceedWithUser(this, user);
                         }
                     } else {
                         Exception e = task.getException();
@@ -191,6 +193,7 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    // For regestering a new user using their email and password they entered. Important to note that after registering, the user will need to sign in normally
     private void registerUser() {
 
         String email = emailField.getText().toString().trim();
@@ -212,6 +215,7 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    // Used to display an input for users to request to the firebase to change their password
     private void showPasswordResetDialog() {
         EditText resetEmailInput = new EditText(this);
         resetEmailInput.setHint("Enter your email");
@@ -232,6 +236,7 @@ public class LoginActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Method to send the email and record whether it was successful
     private void sendPasswordResetEmail(String email) {
         mAuth.sendPasswordResetEmail(email)
                 .addOnCompleteListener(task -> {
@@ -243,11 +248,13 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    // Initiates google's login
     private void startGoogleLogin() {
         Intent intent = googleClient.getSignInIntent();
         startActivityForResult(intent, RC_GOOGLE_SIGN_IN);
     }
 
+    // Starts facebook login
     private void startFacebookLogin() {
         LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("email", "public_profile"));
         LoginManager.getInstance().registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
@@ -268,6 +275,7 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    // Starts twitter login
     private void startTwitterLogin() {
         OAuthProvider.Builder provider = OAuthProvider.newBuilder("twitter.com");
         FirebaseAuth.getInstance()
@@ -285,6 +293,7 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    // Starts logging in through mobile phone.
     private void startPhoneLogin() {
         // Prompt for phone number
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -331,6 +340,7 @@ public class LoginActivity extends AppCompatActivity {
         builder.show();
     }
 
+    // Used for MFA, prompting users to input the SMS code before checking if its accurate.
     private void promptForCode(String verificationId) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Enter SMS Code");
@@ -360,18 +370,16 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    // Used with users signing in through 3rd party applications. Continues the normal logic and goes on
     private void signInWithCredential(AuthCredential credential) {
         FirebaseAuth.getInstance().signInWithCredential(credential)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        // Sign-in success! You can access Google user details here if needed
                         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                         Log.d("Login", "Signed in as: " + user.getEmail());
 
                         // Check if MFA is enrolled
                         if (user.getMultiFactor().getEnrolledFactors().isEmpty()) {
-                            Toast.makeText(this, "Signed in with Google: " + user.getEmail(), Toast.LENGTH_SHORT).show();
-                            // Continue without MFA
                             goToMainScreen(user);
                         } else {
                             // User is MFA-enrolled — continue MFA flow
@@ -388,8 +396,8 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    // Method for going onto the home screen activity
     private void goToMainScreen(FirebaseUser user) {
-        // Example: go to MainActivity or home screen
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
         finish();

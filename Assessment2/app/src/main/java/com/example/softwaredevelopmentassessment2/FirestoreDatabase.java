@@ -10,6 +10,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.*;
 import java.util.*;
 
+// A collection of methods for interacting with the firestore database. Majority of methods was planned for use with creating new courses for those
+// with administrator privlidges, but wasn't able to be developed in time.
 public class FirestoreDatabase {
     private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -17,7 +19,7 @@ public class FirestoreDatabase {
         void onComplete(T result);
     }
 
-    // ✅ Find Account
+    // Method for finding a user's account within the firestore's database
     public static void findAccount(String username, String password, ResultCallback<Boolean> callback) {
         db.collection("account")
                 .whereEqualTo("username", username)
@@ -32,7 +34,7 @@ public class FirestoreDatabase {
                 });
     }
 
-    // ✅ Check if user is admin
+    // See if the user was an admin
     public static void findIsAdmin(String username, String password, ResultCallback<Integer> callback) {
         db.collection("account")
                 .whereEqualTo("username", username)
@@ -50,7 +52,7 @@ public class FirestoreDatabase {
                 });
     }
 
-    // ✅ Get Course from Account
+    // Retrieve the course assigned to an account
     public static void findCourseFromAccount(String username, ResultCallback<String> callback) {
         db.collection("account")
                 .whereEqualTo("username", username)
@@ -67,7 +69,7 @@ public class FirestoreDatabase {
                 });
     }
 
-    // ✅ Check if Course exists
+    // Check if a course is within the course collection
     public static void isCourse(String courseId, ResultCallback<Boolean> callback) {
         db.collection("course")
                 .document(courseId)
@@ -81,7 +83,7 @@ public class FirestoreDatabase {
                 });
     }
 
-    // ✅ Insert Data
+    // Inserting data within a document
     public static void insertData(String collection, Map<String, Object> data, ResultCallback<String> callback) {
         db.collection(collection)
                 .add(data)
@@ -89,7 +91,7 @@ public class FirestoreDatabase {
                 .addOnFailureListener(e -> callback.onComplete(e.getMessage()));
     }
 
-    // ✅ Update Data
+    // Updating data within a document
     public static void updateData(String collection, String docId, String fieldName, Object newValue, ResultCallback<String> callback) {
         db.collection(collection)
                 .document(docId)
@@ -98,7 +100,7 @@ public class FirestoreDatabase {
                 .addOnFailureListener(e -> callback.onComplete(e.getMessage()));
     }
 
-    // ✅ Delete Data
+    // Deleting data within a document
     public static void deleteData(String collection, String docId, ResultCallback<String> callback) {
         db.collection(collection)
                 .document(docId)
@@ -107,6 +109,7 @@ public class FirestoreDatabase {
                 .addOnFailureListener(e -> callback.onComplete(e.getMessage()));
     }
 
+    // Checking for whether an account is in the account collection. If not, one is made.
     public static void ensureUserAccountInFirestore(FirebaseUser user, FirestoreDatabase.ResultCallback<Void> callback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference userRef = db.collection("account").document(user.getUid());

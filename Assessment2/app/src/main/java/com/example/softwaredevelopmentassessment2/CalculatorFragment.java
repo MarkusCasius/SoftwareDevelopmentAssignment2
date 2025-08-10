@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+// Began development on using fragments for the app, however it didn't get far as issues with layout kept hindering progress and was disregarded
+// for later development.
 public class CalculatorFragment extends Fragment {
     @Nullable
     @Override

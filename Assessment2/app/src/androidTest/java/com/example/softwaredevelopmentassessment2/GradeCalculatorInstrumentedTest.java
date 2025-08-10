@@ -16,19 +16,17 @@ public class GradeCalculatorInstrumentedTest {
 
     @Test
     public void testMethodA_returnsExpectedClassification() {
-        // Choose L5 and L6 averages so MethodA -> (L5+L6)/2 gives a First (>= 69.5)
         double L5avg = 75.0;
         double L6avg = 72.0;
 
         double overall = AcademicCalculator.MethodA(L5avg, L6avg); // should be 73.5
-        String classification = AcademicCalculator.CheckClassification(overall, true); // false = undergrad
+        String classification = AcademicCalculator.CheckClassification(overall, true);
 
         assertEquals("1st", classification);
     }
 
     @Test
     public void testMethodB_returnsExpectedClassification() {
-        // Choose L5 and L6 so MethodB -> (L5 + L6 + L6)/3 gives a First
         double L5avg = 72.0;
         double L6avg = 75.0;
 
@@ -40,7 +38,6 @@ public class GradeCalculatorInstrumentedTest {
 
     @Test
     public void testMethodC_returnsExpectedClassification() {
-        // MethodC uses only L6 average
         double L6avg = 80.0;
 
         double overall = AcademicCalculator.MethodC(L6avg); // 80.0

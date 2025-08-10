@@ -159,6 +159,7 @@ public class AcademicCalculator {
         }
     }
 
+    // Since foundation is a simple pass or fail, it just needs to check whether they pass or not.
     public static String FoundationMethod(ArrayList<Integer> credits, ArrayList<Integer> marks) {
         String fail = "Fail";
         String pass = "Pass";
@@ -177,6 +178,7 @@ public class AcademicCalculator {
         }
     }
 
+    // Postgraduate uses a pass, merit and distiction grading system, so classification has been altered to show this.
     public static String PostgraduateMethod(ArrayList<Integer> credits, ArrayList<Integer> marks) {
         return CheckClassification(GetCourseAverage(credits, marks), false);
     }

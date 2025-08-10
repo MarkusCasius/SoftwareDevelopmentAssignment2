@@ -7,6 +7,8 @@
 //import java.util.HashMap;
 //import java.util.Map;
 
+// The FirestoreSeeder is used to initially instantiate the course database and fill it up with courses, along with modules for testing.
+
 //public class FirestoreSeeder {
 //
 //    private static final FirebaseFirestore db = FirebaseFirestore.getInstance();

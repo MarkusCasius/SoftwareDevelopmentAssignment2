@@ -30,6 +30,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+// Activity used to display the contents of the profile page, along with handling updates to a user's information.
+
 public class ProfileActivity extends AppCompatActivity {
 
     private static final int IMAGE_PICK_REQUEST_CODE = 1001;
@@ -65,13 +67,14 @@ public class ProfileActivity extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
 
         loadUserInfo();
-        loadCourses(); // load available courses
+        loadCourses();
         loadUserExtraData();
 
         profileImageView.setOnClickListener(v -> openImagePicker());
         saveButton.setOnClickListener(v -> saveUserProfile());
     }
 
+    // Loads a user's information used to parse through the variables displayed in activity_profile.xml.
     private void loadUserInfo() {
         if (currentUser != null) {
             userNameTextView.setText(currentUser.getDisplayName());
@@ -93,6 +96,8 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+    // Loads the available courses so users can change their desires courses if they wish to calculate
+    // from the modules provided in that course.
     private void loadCourses() {
         firestore.collection("course")
                 .get()
@@ -120,6 +125,7 @@ public class ProfileActivity extends AppCompatActivity {
                 );
     }
 
+    // Loads additional data from the user, being their course, and whether they have darkMode enabled.
     private void loadUserExtraData() {
         firestore.collection("account").document(currentUser.getUid()).get()
                 .addOnSuccessListener(document -> {
@@ -128,7 +134,6 @@ public class ProfileActivity extends AppCompatActivity {
                         boolean darkMode = Boolean.TRUE.equals(document.getBoolean("darkMode"));
                         themeSwitch.setChecked(darkMode);
 
-                        // Set spinner selection based on courseId
                         if (courseId != null && !courseIds.isEmpty()) {
                             int index = courseIds.indexOf(courseId);
                             if (index >= 0) {
@@ -139,6 +144,8 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 
+    // Module for beginning the activity to select a new image, then to save it to firebase and
+    // local files.
     private void openImagePicker() {
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setType("image/*");
@@ -153,13 +160,8 @@ public class ProfileActivity extends AppCompatActivity {
             selectedImageUri = data.getData();
             if (selectedImageUri != null) {
                 try {
-                    // Copy the selected image to internal storage
                     String localPath = copyImageToInternalStorage(selectedImageUri);
-
-                    // Display immediately
                     profileImageView.setImageURI(Uri.parse(localPath));
-
-                    // Save path to Firestore
                     saveProfileImagePath(localPath);
 
                 } catch (IOException e) {
@@ -189,6 +191,7 @@ public class ProfileActivity extends AppCompatActivity {
         return file.getAbsolutePath();
     }
 
+    // Method for saving the local path of the image on the device
     private void saveProfileImagePath(String localPath) {
         firestore.collection("account").document(currentUser.getUid())
                 .update("profileImagePath", localPath)
@@ -200,6 +203,7 @@ public class ProfileActivity extends AppCompatActivity {
                 );
     }
 
+    // Method for updating the information the user has altered to the firestore.
     private void saveUserProfile() {
         int selectedIndex = courseSpinner.getSelectedItemPosition();
         if (selectedIndex < 0 || selectedIndex >= courseIds.size()) {

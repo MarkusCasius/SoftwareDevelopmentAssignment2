@@ -22,7 +22,6 @@ public class GradeCalculatorTest {
         creditsMap = new HashMap<>();
         moduleIds = new ArrayList<>();
 
-        // Simulate modules
         creditsMap.put("M1", 20);
         creditsMap.put("M2", 40);
         creditsMap.put("M3", 60);
@@ -35,7 +34,6 @@ public class GradeCalculatorTest {
         ArrayList<Integer> marks = new ArrayList<>(Arrays.asList(72, 68, 65, 59, 61));
         String classification = AcademicCalculator.MethodD(marks);
 
-        // In this case, 2:1 should be the most common classification
         assertEquals("2:1", classification);
     }
 

@@ -5,9 +5,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+// A splash activity, being the first page opened. It then redirects to login if the user isn't locally logged in on the device
+// Or goes to the MainActivity/home page if the user is logged in.
 
     public class SplashActivity extends AppCompatActivity {
 
@@ -22,13 +24,11 @@ import com.google.firebase.auth.FirebaseUser;
             new Handler().postDelayed(() -> {
                 FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
                 if (currentUser != null) {
-                    // ✅ User is signed in
                     startActivity(new Intent(SplashActivity.this, MainActivity.class));
                 } else {
-                    // ❌ Not signed in
                     startActivity(new Intent(SplashActivity.this, LoginActivity.class));
                 }
-                finish(); // Close splash so user can't come back with back button
+                finish();
             }, SPLASH_DELAY);
         }
     }

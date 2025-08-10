@@ -19,10 +19,8 @@ public abstract class BaseActivity extends AppCompatActivity {
     private ActionBarDrawerToggle drawerToggle;
     private NavigationView navigationView;
 
-    /**
-     * Call this from child activities in onCreate()
-     * Pass the layout resource that includes DrawerLayout + toolbar + navigation view
-     */
+    // BaseActivity was made to create the navigation menu and provide a uniform layout for following pages.
+    // However issues with layout and time constraints meant it would only be on MainActivity.
     protected void setupDrawer(int layoutResId) {
         setContentView(layoutResId);
 
@@ -52,10 +50,6 @@ public abstract class BaseActivity extends AppCompatActivity {
                 // Navigate to Profile
                 startActivity(new Intent(this, ProfileActivity.class));
                 drawerLayout.closeDrawers();
-            } else if (id == R.id.nav_settings) {
-                // Navigate to GradeCalculatorActivity
-                startActivity(new Intent(this, GradeCalculatorActivity.class));
-                drawerLayout.closeDrawers();
             } else if (id == R.id.nav_calculator) {
                 // Navigate to GradeCalculatorActivity
                 Log.d("NavMenu", "Navigating to Calculator.");
@@ -71,7 +65,6 @@ public abstract class BaseActivity extends AppCompatActivity {
                             finish();
                         });
             }
-            // Add more else-if cases as needed
 
             return true;
         });

@@ -1,8 +1,11 @@
 package com.example.softwaredevelopmentassessment2;
 
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
@@ -11,6 +14,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.NotificationCompat;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -22,13 +26,18 @@ import com.google.firebase.auth.PhoneAuthProvider;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+// This class handles methods for resolving Multi Factor Authentication recieved from the LoginActivity
 public class MfaHelper {
 
+    private static final String CHANNEL_ID = "welcome_channel_id";
+    private static final String CHANNEL_NAME = "Welcome Notifications";
+
+    // When a MFA challenge is sent (error), it will be directed here. Often it is due to an account having MFA enabled, and thus needs
+    // to complete the authentication before sign in can be complete.
     public static void handleMfaChallenge(Activity activity, FirebaseAuthMultiFactorException e) {
         MultiFactorResolver resolver = e.getResolver();
         MultiFactorSession session = resolver.getSession();
 
-        // Select the first phone factor hint
         PhoneMultiFactorInfo selectedHint = null;
         for (MultiFactorInfo hint : resolver.getHints()) {
             if (hint instanceof PhoneMultiFactorInfo) {
@@ -67,6 +76,7 @@ public class MfaHelper {
         PhoneAuthProvider.verifyPhoneNumber(options);
     }
 
+    // Displays an SMS field to enter the code they recieve to complete the MFA
     private static void showCodeEntryDialog(Activity activity, String verificationId, MultiFactorResolver resolver) {
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle("Enter SMS Code");
@@ -89,6 +99,7 @@ public class MfaHelper {
         builder.show();
     }
 
+    // Final module to complete the MFA, checking if the MFA was successful, then directing to proceedWithUser
     private static void finishMfaSignIn(Activity activity, MultiFactorResolver resolver, PhoneAuthCredential credential) {
         PhoneMultiFactorAssertion assertion = PhoneMultiFactorGenerator.getAssertion(credential);
         resolver.resolveSignIn(assertion)
@@ -103,6 +114,9 @@ public class MfaHelper {
                 });
     }
 
+    // Module for enrolling an account with MFA. Given Firebase's limitations with a free account, mobile phone is used. Starts by asking the user
+    // to enter their phone number, then to input their SMS code. Given the free account, no actual requests can be sent, so a dummy phone and fixed
+    // SMS code is used.
     public static void enrollSecondFactor(Activity activity, FirebaseUser user) {
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle("Enter Your Phone Number");
@@ -154,6 +168,7 @@ public class MfaHelper {
         builder.show();
     }
 
+    // Similar to showCodeEntryDialog, it works similarly, but for ensuring that the entered phone number is correct before assigning it to the user's account.
     private static void showCodeEntryDialogForEnrollment(Activity activity, String verificationId, FirebaseUser user) {
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle("Enter SMS Code");
@@ -181,13 +196,41 @@ public class MfaHelper {
         builder.show();
     }
 
+    // A Module to either begin with a user enrolling MFA, or going onto the home page.
     public static void proceedWithUser(Activity activity, FirebaseUser user) {
         if (user.getMultiFactor().getEnrolledFactors().isEmpty()) {
             enrollSecondFactor(activity, user);
         } else {
+            showWelcomeNotification(activity);
             Intent intent = new Intent(activity, MainActivity.class);
             activity.startActivity(intent);
             activity.finish();
         }
     }
+
+    // A module for displaying a welcome notification after creating a new account for the application.
+    private static void showWelcomeNotification(Activity activity) {
+        NotificationManager notificationManager =
+                (NotificationManager) activity.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // Create notification channel for Oreo+ devices
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(activity, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)  // or your app icon
+                .setContentTitle("Welcome to the App!")
+                .setContentText("Your account has been created successfully. Enjoy your experience!")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true);
+
+        notificationManager.notify(1, builder.build());
+    }
 }
+
