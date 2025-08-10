@@ -42,7 +42,7 @@ public class MfaHelper {
             return;
         }
 
-        PhoneAuthOptions options = PhoneAuthOptions.newBuilder()
+        PhoneAuthOptions options = PhoneAuthOptions.newBuilder(FirebaseAuth.getInstance())
                 .setMultiFactorSession(session) // ✅ Use this, not user.getMultiFactor().getSession()
                 .setActivity(activity)
                 .setPhoneNumber(phoneInfo.getPhoneNumber())

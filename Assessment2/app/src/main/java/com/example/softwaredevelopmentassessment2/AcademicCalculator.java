@@ -124,7 +124,7 @@ public class AcademicCalculator {
         // and returning back the highest mode grade found.
         for (int i = 0; i < marks.size(); ++i) {
             int courseMarks = marks.get(i);
-            String grade = CheckClassification(courseMarks, false);
+            String grade = CheckClassification(courseMarks, true);
             if (grade.equals(first)) {
                 firstMode ++;
             }
@@ -178,7 +178,7 @@ public class AcademicCalculator {
     }
 
     public static String PostgraduateMethod(ArrayList<Integer> credits, ArrayList<Integer> marks) {
-        return CheckClassification(GetCourseAverage(credits, marks), true);
+        return CheckClassification(GetCourseAverage(credits, marks), false);
     }
 }
 

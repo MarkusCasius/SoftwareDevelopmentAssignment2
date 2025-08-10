@@ -180,28 +180,36 @@ public class LoginActivity extends AppCompatActivity {
                     } else {
                         Exception e = task.getException();
                         if (e instanceof FirebaseAuthMultiFactorException) {
-                            MfaHelper.handleMfaChallenge(this, (FirebaseAuthMultiFactorException) e); // Reuse existing method
-                        } else {
-                            Toast.makeText(this, "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            try {
+                                MfaHelper.handleMfaChallenge(this, (FirebaseAuthMultiFactorException) e);
+                            } catch (Exception ex) {
+                                Toast.makeText(this, "MFA setup failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                                Log.e("LoginError", "Error: " + ex.getMessage());
+                            }
                         }
                     }
                 });
     }
 
     private void registerUser() {
+
         String email = emailField.getText().toString().trim();
         String password = passwordField.getText().toString().trim();
 
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        Toast.makeText(this, "Account created", Toast.LENGTH_SHORT).show();
-                        MfaHelper.proceedWithUser(this, user); // Offer to enroll MFA
-                    } else {
-                        Toast.makeText(this, "Sign-up failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+        if (!email.isEmpty() && !password.isEmpty()) {
+            mAuth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            Toast.makeText(this, "Account created", Toast.LENGTH_SHORT).show();
+                            MfaHelper.proceedWithUser(this, user); // Offer to enroll MFA
+                        } else {
+                            Toast.makeText(this, "Sign-up failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(this, "Sign-up failed: Please enter email and password.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void showPasswordResetDialog() {
